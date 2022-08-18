@@ -1,15 +1,28 @@
 import { AxiosPromise, AxiosRequestConfig, AxiosResponse } from '../types'
 import { parseHeaders } from './helpers/headers'
+import { createError } from './helpers/error'
 
 export function xhr(config: AxiosRequestConfig): AxiosPromise {
-  return new Promise(resolve => {
-    const { data = null, url, method = 'get', headers, responseType } = config
+  return new Promise((resolve, reject) => {
+    const { data = null, url, method = 'get', headers, responseType, timeout } = config
 
     const request = new XMLHttpRequest()
 
     if (responseType) {
       request.responseType = responseType
     }
+
+    if (timeout) {
+      request.timeout = timeout
+    }
+
+    Object.keys(headers).forEach(name => {
+      if (data === null && name.toLowerCase() === 'content-type') {
+        delete headers[name]
+      } else {
+        request.setRequestHeader(name, headers[name])
+      }
+    })
 
     request.open(method.toUpperCase(), url, true)
 
@@ -28,17 +41,34 @@ export function xhr(config: AxiosRequestConfig): AxiosPromise {
         config,
         request
       }
-      resolve(response)
+      handleResponse(response)
     }
 
-    Object.keys(headers).forEach(name => {
-      if (data === null && name.toLowerCase() === 'content-type') {
-        delete headers[name]
+    function handleResponse(response: AxiosResponse) {
+      if (response.status >= 200 && response.status < 300) {
+        resolve(response)
       } else {
-        request.setRequestHeader(name, headers[name])
+        reject(
+          createError(
+            `Requset failed with status code ${response.status}`,
+            config,
+            null,
+            request,
+            response
+          )
+        )
       }
-    })
+    }
 
     request.send(data)
+
+    request.onerror = function handleError() {
+      reject(createError('NetWork Error', config, null, request))
+    }
+
+    request.ontimeout = function handleTimeout() {
+      debugger
+      reject(createError(`Timeout out ${timeout}ms exceeded`, config, 'ECONNABORTED', request))
+    }
   })
 }
