@@ -16,6 +16,8 @@ export function xhr(config: AxiosRequestConfig): AxiosPromise {
       request.timeout = timeout
     }
 
+    request.open(method.toUpperCase(), url, true)
+
     Object.keys(headers).forEach(name => {
       if (data === null && name.toLowerCase() === 'content-type') {
         delete headers[name]
@@ -23,8 +25,6 @@ export function xhr(config: AxiosRequestConfig): AxiosPromise {
         request.setRequestHeader(name, headers[name])
       }
     })
-
-    request.open(method.toUpperCase(), url, true)
 
     request.onreadystatechange = function handleLoad() {
       if (request.readyState !== 4) {

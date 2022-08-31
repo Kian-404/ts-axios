@@ -71,6 +71,13 @@ router.get('/error/timeout', function (req, res) {
   }, 3000)
 })
 
+router.get('/extend/user', function (req, res) {
+  res.json({
+    result:{
+      name:'123'
+    }
+  })
+})
 
 router.get('/extend/get', function (req, res) {
   res.json(req.query)
